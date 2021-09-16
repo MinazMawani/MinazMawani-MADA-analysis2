@@ -8,6 +8,7 @@
 library(ggplot2) #for plotting
 library(broom) #for cleaning up output from lm()
 library(here) #for data loading/saving
+library(tidyverse)
 
 #path to data
 #note the use of the here() package and not absolute paths
@@ -19,9 +20,6 @@ mydata <- readRDS(data_location)
 ######################################
 #Data exploration/description
 ######################################
-#I'm using basic R commands here.
-#Lots of good packages exist to do more.
-#For instance check out the tableone or skimr packages
 
 #summarize data 
 mysummary = summary(mydata)
@@ -37,10 +35,13 @@ summary_df = data.frame(do.call(cbind, lapply(mydata, summary)))
 summarytable_file = here("results", "summarytable.rds")
 saveRDS(summary_df, file = summarytable_file)
 
-
 #make a scatterplot of data
 #we also add a linear regression line to it
-p1 <- mydata %>% ggplot(aes(x=Height, y=Weight)) + geom_point() + geom_smooth(method='lm')
+p1 <- mydata %>% 
+  filter(State == "Georgia") %>%
+  ggplot(aes(x=Year, y=`Smoke everyday`)) + 
+  geom_point() + ggtitle("Trend in Smoking Every Day, Georgia") + labs(y = "# of Persons Smoking Every Day") +
+  geom_smooth(method='lm') #In Georgia, the number of people who smoke every day looks like it's decreasing over time
 
 #look at figure
 plot(p1)
@@ -54,13 +55,14 @@ ggsave(filename = figure_file, plot=p1)
 ######################################
 
 # fit linear model
-lmfit <- lm(Weight ~ Height, mydata)  
+
+lmfit <- lm(`Smoke everyday` ~ Year, mydata)  
 
 # place results from fit into a data frame with the tidy function
 lmtable <- broom::tidy(lmfit)
 
 #look at fit results
-print(lmtable)
+print(lmtable) #The number of people who smoke every day in Georgia decreases by -0.476 persons per additional 1 year. This relationship is statistically significant (p-value = 4.03E-70).
 
 # save fit results table  
 table_file = here("results", "resulttable.rds")
